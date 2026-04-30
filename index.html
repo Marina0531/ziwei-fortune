@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>紫微斗数·命运推演 | OpenClaw</title>
+<meta name="description" content="紫微斗数AI智能排盘，0.99元获取专属命盘报告，涵盖财运、事业、情感、健康全维度解析">
+<meta property="og:title" content="紫微斗数AI命盘推演 | OpenClaw">
+<meta property="og:description" content="输入出生信息，AI智能推演你的紫微命盘，财运事业情感一测便知">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --dark: #0d0d1a;
+    --deep: #12122a;
+    --card: #1a1a35;
+    --border: rgba(201,168,76,0.3);
+    --text: #e8e0cc;
+    --muted: #8880a0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(100,60,180,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.1) 0%, transparent 50%);
+  }
+
+  /* ===== STARS BG ===== */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .star { position: absolute; background: white; border-radius: 50%; animation: twinkle linear infinite; }
+  @keyframes twinkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
+
+  /* ===== HEADER ===== */
+  header {
+    position: relative; z-index: 10;
+    text-align: center; padding: 32px 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-size: 13px; color: var(--gold); letter-spacing: 4px; margin-bottom: 12px; }
+  header h1 { font-size: 36px; font-weight: 300; letter-spacing: 8px; color: var(--gold-light);
+    text-shadow: 0 0 30px rgba(201,168,76,0.5); }
+  header p { color: var(--muted); font-size: 14px; margin-top: 10px; letter-spacing: 2px; }
+
+  /* ===== MAIN ===== */
+  .container { max-width: 860px; margin: 0 auto; padding: 40px 20px; position: relative; z-index: 10; }
+
+  /* ===== FORM CARD ===== */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .card-title {
+    font-size: 16px; letter-spacing: 3px; color: var(--gold);
+    margin-bottom: 28px; display: flex; align-items: center; gap: 10px;
+  }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
+
+  .form-group label {
+    display: block; font-size: 12px; color: var(--muted);
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+  .form-group select option { background: var(--deep); }
+  .form-group.full { grid-column: 1/-1; }
+
+  /* ===== DIMENSIONS ===== */
+  .dim-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .dim-btn {
+    padding: 8px 18px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-size: 13px; cursor: pointer; transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .dim-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .dim-btn.active {
+    background: linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.1));
+    border-color: var(--gold); color: var(--gold-light);
+  }
+
+  /* ===== SUBMIT BTN ===== */
+  .btn-submit {
+    width: 100%; padding: 18px;
+    background: linear-gradient(135deg, #8b6914, #c9a84c, #8b6914);
+    border: none; border-radius: 12px;
+    color: #fff; font-size: 18px; letter-spacing: 4px;
+    cursor: pointer; margin-top: 12px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.5); }
+
+  /* ===== PAYWALL OVERLAY ===== */
+  #paywall {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+  }
+  #paywall.show { display: flex; }
+  .paywall-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 420px; width: 90%;
+    text-align: center;
+    position: relative;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  .paywall-close {
+    position: absolute; top: 16px; right: 20px;
+    background: none; border: none; color: var(--muted);
+    font-size: 24px; cursor: pointer;
+  }
+  .paywall-icon { font-size: 48px; margin-bottom: 16px; }
+  .paywall-title { font-size: 22px; color: var(--gold-light); letter-spacing: 3px; margin-bottom: 8px; }
+  .paywall-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; line-height: 1.8; }
+  .price-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.05));
+    border: 1px solid var(--gold);
+    border-radius: 30px; padding: 8px 28px;
+    font-size: 28px; color: var(--gold-light);
+    margin-bottom: 24px; letter-spacing: 2px;
+  }
+  .price-badge span { font-size: 16px; }
+
+  /* QR CODE AREA */
+  .qr-area {
+    background: white; border-radius: 12px;
+    padding: 16px; margin: 0 auto 20px;
+    width: 200px; height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .qr-placeholder {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #f8f8f8; border-radius: 8px;
+  }
+  .qr-grid {
+    display: grid; grid-template-columns: repeat(7,1fr); gap: 2px;
+    width: 140px;
+  }
+  .qr-cell { width: 100%; aspect-ratio:1; border-radius: 1px; }
+  .qr-upload-hint { font-size: 11px; color: #999; margin-top: 8px; text-align: center; }
+
+  /* PAYMENT STEPS */
+  .pay-steps { text-align: left; margin-bottom: 20px; }
+  .pay-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .pay-step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); color: #000;
+    font-size: 12px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .pay-step-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .pay-step-text b { color: var(--gold-light); }
+
+  /* REMARK CODE */
+  .remark-code {
+    background: rgba(201,168,76,0.1); border: 1px dashed var(--gold);
+    border-radius: 8px; padding: 10px 16px;
+    font-size: 20px; letter-spacing: 4px; color: var(--gold-light);
+    margin: 0 auto 20px; display: inline-block;
+    cursor: pointer; font-family: monospace;
+  }
+  .remark-code:active { opacity: 0.7; }
+  .remark-hint { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+
+  /* VERIFY INPUT */
+  .verify-section { margin-top: 8px; }
+  .verify-row { display: flex; gap: 10px; }
+  .verify-row input {
+    flex: 1; background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; color: var(--text); font-size: 16px;
+    outline: none; letter-spacing: 3px; text-align: center;
+    text-transform: uppercase;
+  }
+  .verify-row input:focus { border-color: var(--gold); }
+  .btn-verify {
+    padding: 12px 20px; background: var(--gold);
+    border: none; border-radius: 8px; color: #000;
+    font-size: 14px; font-weight: bold; cursor: pointer; white-space: nowrap;
+  }
+  .verify-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .verify-error { color: #ff6b6b; font-size: 12px; margin-top: 6px; display: none; }
+
+  /* UPLOAD BTN */
+  .btn-upload {
+    width: 100%; padding: 12px;
+    border: 1px dashed var(--gold); background: transparent;
+    border-radius: 8px; color: var(--gold); font-size: 13px;
+    cursor: pointer; margin-bottom: 14px; transition: all 0.2s;
+  }
+  .btn-upload:hover { background: rgba(201,168,76,0.1); }
+
+  /* ===== RESULT SECTION ===== */
+  #result { display: none; }
+
+  /* PALACE GRID */
+  .palace-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 100px);
+    gap: 4px; margin-bottom: 24px;
+  }
+  .palace {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 8px; padding: 8px;
+    font-size: 11px; color: var(--muted);
+    position: relative; overflow: hidden;
+    transition: all 0.2s;
+  }
+  .palace:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+  .palace.ming { border-color: var(--gold) !important; background: rgba(201,168,76,0.1) !important; }
+  .palace.ming::after { content:'命'; position:absolute; bottom:4px; right:6px; font-size:18px; color:rgba(201,168,76,0.2); }
+  .palace-name { color: var(--gold); font-size: 10px; letter-spacing: 1px; margin-bottom: 4px; }
+  .palace-stars { font-size: 11px; line-height: 1.6; }
+  .star-main { color: #f0d080; font-weight: bold; }
+  .star-luck { color: #80d0ff; }
+  .star-bad { color: #ff8080; }
+  .palace.center {
+    grid-column: 2/4; grid-row: 2/4;
+    background: rgba(201,168,76,0.05);
+    border-color: var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .center-name { font-size: 24px; color: var(--gold-light); letter-spacing: 4px; margin-bottom: 8px; }
+  .center-sub { font-size: 12px; color: var(--muted); line-height: 1.8; }
+
+  /* SCORE RING */
+  .score-section { text-align: center; margin-bottom: 32px; }
+  .score-ring { width: 120px; height: 120px; position: relative; margin: 0 auto 12px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .score-num {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .score-num .num { font-size: 32px; color: var(--gold-light); font-weight: 300; }
+  .score-num .label { font-size: 11px; color: var(--muted); }
+
+  /* DIMENSION CARDS */
+  .dim-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width:600px){ .dim-cards { grid-template-columns: 1fr; } }
+  .dim-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    transition: all 0.2s;
+  }
+  .dim-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .dim-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .dim-card-icon { font-size: 24px; }
+  .dim-card-title { font-size: 15px; color: var(--gold); letter-spacing: 2px; }
+  .dim-score-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+  .dim-score-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .dim-analysis { font-size: 13px; line-height: 1.9; color: var(--text); }
+  .dim-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 4px; margin-bottom: 8px; }
+  .tag-good { background: rgba(80,200,120,0.15); color: #80e0a0; border: 1px solid rgba(80,200,120,0.3); }
+  .tag-warn { background: rgba(255,180,50,0.15); color: #ffc850; border: 1px solid rgba(255,180,50,0.3); }
+  .tag-bad  { background: rgba(255,100,100,0.15); color: #ff9090; border: 1px solid rgba(255,100,100,0.3); }
+
+  /* LIUYEAR */
+  .liuyear-section { margin-bottom: 24px; }
+  .liuyear-title { font-size: 14px; color: var(--gold); letter-spacing: 3px; margin-bottom: 16px; }
+  .liuyear-list { display: flex; flex-direction: column; gap: 10px; }
+  .liuyear-item {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .liuyear-item.current { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+  .liuyear-year { font-size: 18px; color: var(--gold-light); min-width: 50px; font-weight: 300; }
+  .liuyear-gz { font-size: 12px; color: var(--muted); min-width: 40px; }
+  .liuyear-stars { flex: 1; font-size: 12px; color: var(--text); }
+  .liuyear-rating { font-size: 14px; }
+
+  /* ADVICE */
+  .advice-box {
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(100,60,180,0.08));
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin-bottom: 24px;
+  }
+  .advice-title { color: var(--gold); font-size: 14px; letter-spacing: 3px; margin-bottom: 16px; }
+  .advice-list { list-style: none; }
+  .advice-list li {
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px; line-height: 1.8; display: flex; gap: 10px;
+  }
+  .advice-list li:last-child { border: none; }
+  .advice-list .icon { flex-shrink: 0; }
+
+  /* SHARE BTN */
+  .btn-share {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.1));
+    border: 1px solid var(--gold); border-radius: 12px;
+    color: var(--gold-light); font-size: 16px; letter-spacing: 4px;
+    cursor: pointer; margin-top: 8px; transition: all 0.2s;
+  }
+  .btn-share:hover { background: rgba(201,168,76,0.25); }
+
+  /* ===== ADMIN PANEL ===== */
+  #admin-entry {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 11px; color: var(--muted); cursor: pointer;
+  }
+  #admin-panel {
+    display: none; position: fixed; inset: 0; z-index: 2000;
+    background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+  }
+  #admin-panel.show { display: flex; }
+  .admin-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; max-width: 600px; width: 90%;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .admin-title { color: var(--gold); font-size: 16px; letter-spacing: 3px; margin-bottom: 20px; }
+  .admin-close { float: right; cursor: pointer; color: var(--muted); font-size: 20px; }
+  .admin-login { margin-bottom: 20px; display: flex; gap: 10px; }
+  .admin-login input {
+    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none;
+  }
+  .btn-admin-login {
+    padding: 10px 20px; background: var(--gold); border: none;
+    border-radius: 8px; color: #000; font-size: 14px; font-weight: bold; cursor: pointer;
+  }
+  .order-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .order-table th { color: var(--gold); padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
+  .order-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text); }
+  .btn-activate {
+    padding: 4px 12px; background: rgba(80,200,120,0.2);
+    border: 1px solid rgba(80,200,120,0.4); border-radius: 4px;
+    color: #80e0a0; font-size: 12px; cursor: pointer;
+  }
+  .btn-activate.done { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: var(--muted); cursor: default; }
+  .admin-add-code { margin-top: 20px; }
+  .admin-add-row { display: flex; gap: 10px; margin-top: 10px; }
+  .admin-add-row input {
+    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none;
+  }
+  .btn-gen-code {
+    padding: 10px 18px; background: var(--gold); border: none;
+    border-radius: 8px; color: #000; font-size: 13px; font-weight: bold; cursor: pointer;
+  }
+  .new-code-display {
+    margin-top: 10px; padding: 12px; background: rgba(201,168,76,0.1);
+    border: 1px dashed var(--gold); border-radius: 8px;
+    font-family: monospace; font-size: 20px; letter-spacing: 4px;
+    color: var(--gold-light); text-align: center; display: none;
+  }
+  .stat-row { display: flex; gap: 16px; margin-bottom: 20px; }
+  .stat-card { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-num { font-size: 28px; color: var(--gold-light); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* LOADING */
+  #loading {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(13,13,26,0.9); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; flex-direction: column; gap: 20px;
+  }
+  #loading.show { display: flex; }
+  .loading-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-size: 14px; letter-spacing: 3px; animation: blink 1.5s ease infinite; }
+  @keyframes blink { 0%,100%{opacity:0.4} 50%{opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+
+<!-- Header -->
+<header>
+  <div class="brand">✦ OPENCLAW ✦</div>
+  <h1>紫微命盘</h1>
+  <p>星辰指引 · 命运推演 · 趋吉避凶</p>
+</header>
+
+<!-- Main -->
+<div class="container">
+  <!-- Input Form -->
+  <div class="card" id="input-card">
+    <div class="card-title">⊕ 输入命主信息</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>姓名 / 称呼</label>
+        <input type="text" id="name" placeholder="请输入姓名" maxlength="10">
+      </div>
+      <div class="form-group">
+        <label>出生地</label>
+        <input type="text" id="birthplace" placeholder="省市区/县" value="">
+      </div>
+      <div class="form-group">
+        <label>出生年份</label>
+        <input type="number" id="year" placeholder="如 1994" min="1900" max="2024" value="">
+      </div>
+      <div class="form-group">
+        <label>出生月份</label>
+        <select id="month">
+          <option value="">请选择</option>
+          <option value="1">1月</option><option value="2">2月</option>
+          <option value="3">3月</option><option value="4">4月</option>
+          <option value="5">5月</option><option value="6">6月</option>
+          <option value="7">7月</option><option value="8">8月</option>
+          <option value="9">9月</option><option value="10">10月</option>
+          <option value="11">11月</option><option value="12">12月</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>出生日期</label>
+        <input type="number" id="day" placeholder="如 29" min="1" max="31" value="">
+      </div>
+      <div class="form-group">
+        <label>出生时辰</label>
+        <select id="hour">
+          <option value="">请选择</option>
+          <option value="0">子时（23:00-01:00）</option>
+          <option value="1">丑时（01:00-03:00）</option>
+          <option value="2">寅时（03:00-05:00）</option>
+          <option value="3">卯时（05:00-07:00）</option>
+          <option value="4">辰时（07:00-09:00）</option>
+          <option value="5">巳时（09:00-11:00）</option>
+          <option value="6">午时（11:00-13:00）</option>
+          <option value="7">未时（13:00-15:00）</option>
+          <option value="8">申时（15:00-17:00）</option>
+          <option value="9">酉时（17:00-19:00）</option>
+          <option value="10">戌时（19:00-21:00）</option>
+          <option value="11">亥时（21:00-23:00）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>性别</label>
+        <select id="gender">
+          <option value="male">男</option>
+          <option value="female">女</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>侧重维度（可多选）</label>
+        <div class="dim-grid" id="dim-grid">
+          <button class="dim-btn active" data-dim="overall">🌌 整体运势</button>
+          <button class="dim-btn" data-dim="wealth">💰 财运</button>
+          <button class="dim-btn" data-dim="career">🚀 事业</button>
+          <button class="dim-btn" data-dim="love">💕 情感</button>
+          <button class="dim-btn" data-dim="health">🌿 健康</button>
+          <button class="dim-btn" data-dim="child">👶 子女</button>
+          <button class="dim-btn" data-dim="travel">🌍 迁移出行</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-submit" id="btn-calc">✦ 开始推演命盘 ✦</button>
+  </div>
+</div>
+
+<!-- Paywall Overlay -->
+<div id="paywall">
+  <div class="paywall-box">
+    <button class="paywall-close" onclick="closePaywall()">✕</button>
+    <div class="paywall-icon">🌌</div>
+    <div class="paywall-title">命盘推演</div>
+    <div class="paywall-sub">紫微斗数十二宫排盘，覆盖命运、财运、事业、情感全维度深度解析</div>
+
+    <div class="price-badge"><span>¥</span>0.99<span> /次</span></div>
+
+    <!-- WeChat Zansang Mode -->
+    <div id="zansang-mode">
+      <div class="pay-steps">
+        <div class="pay-step">
+          <div class="pay-step-num">1</div>
+          <div class="pay-step-text">点击下方按钮，跳转到公众号文章</div>
+        </div>
+        <div class="pay-step">
+          <div class="pay-step-num">2</div>
+          <div class="pay-step-text">在文章底部点击 <b>「赞赏」</b>，选择 <b>¥0.99</b> 金额支付</div>
+        </div>
+        <div class="pay-step">
+          <div class="pay-step-num">3</div>
+          <div class="pay-step-text">记住你的备注码：<br>
+            <div style="margin-top:6px">
+              <span class="remark-code" id="remark-code" onclick="copyRemark()" title="点击复制">----</span>
+              <div class="remark-hint">👆 点击复制 · 在赞赏时填写</div>
+            </div>
+          </div>
+        </div>
+        <div class="pay-step">
+          <div class="pay-step-num">4</div>
+          <div class="pay-step-text">返回此处，输入激活码解锁命盘</div>
+        </div>
+      </div>
+      <a id="zansang-link" href="#" target="_blank" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,#07c160,#06ad56);border:none;border-radius:10px;color:#fff;font-size:16px;text-align:center;letter-spacing:3px;text-decoration:none;margin-bottom:14px;">
+        💚 前往赞赏 ¥0.99
+      </a>
+      <div class="qr-area" id="qr-area" style="display:none">
+        <canvas id="qr-canvas" width="168" height="168"></canvas>
+      </div>
+      <div id="qr-hint" style="display:none" class="qr-upload-hint">👆 微信扫码支付 ¥0.99</div>
+    </div>
+
+    <!-- QR Code Mode (admin can switch) -->
+    <div id="qrcode-mode" style="display:none">
+      <div class="qr-area" id="qr-area2">
+        <canvas id="qr-canvas2" width="168" height="168"></canvas>
+      </div>
+      <div class="qr-upload-hint">👆 微信扫码支付 ¥0.99</div>
+      <div class="pay-steps">
+        <div class="pay-step">
+          <div class="pay-step-num">1</div>
+          <div class="pay-step-text">微信扫码，支付 <b>¥0.99</b></div>
+        </div>
+        <div class="pay-step">
+          <div class="pay-step-num">2</div>
+          <div class="pay-step-text">付款备注中输入验证码：<br>
+            <div style="margin-top:6px">
+              <span class="remark-code" id="remark-code2" onclick="copyRemark2()" title="点击复制">----</span>
+              <div class="remark-hint">👆 点击复制 · 粘贴到付款备注栏</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verify -->
+    <div class="verify-section">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">输入激活码（赞赏/付款核验后由客服发送）</div>
+      <div class="verify-row">
+        <input type="text" id="verify-input" placeholder="XXXXXX" maxlength="6">
+        <button class="btn-verify" onclick="verifyCode()">解锁</button>
+      </div>
+      <div class="verify-error" id="verify-error">❌ 激活码不正确，请重试或联系客服</div>
+      <div class="verify-hint">赞赏/付款后，截图发送至公众号「OpenClaw」获取激活码</div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Section -->
+<div class="container" id="result">
+  <div class="card">
+    <div class="card-title">⊕ 十二宫命盘</div>
+    <div class="palace-grid" id="palace-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⊕ 命格综合评分</div>
+    <div class="score-section">
+      <div class="score-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="url(#scoreGrad)" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="314" id="score-dash" stroke-dashoffset="314"/>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#8b6914"/>
+              <stop offset="100%" stop-color="#f0d080"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="score-num">
+          <div class="num" id="score-num">0</div>
+          <div class="label">命格分</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--muted)" id="score-label"></div>
+    </div>
+  </div>
+
+  <div class="card" id="dim-results">
+    <div class="card-title">⊕ 各维度深度解析</div>
+    <div class="dim-cards" id="dim-cards-container"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⊕ 近三年流年运势</div>
+    <div class="liuyear-list" id="liuyear-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⊕ 趋吉避凶建议</div>
+    <div class="advice-box" style="border:none;padding:0;background:none">
+      <ul class="advice-list" id="advice-list"></ul>
+    </div>
+  </div>
+
+  <button class="btn-share" onclick="shareResult()">✦ 分享命盘 ✦</button>
+</div>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="loading-ring"></div>
+  <div class="loading-text">星盘推演中…</div>
+</div>
+
+<!-- Admin Entry -->
+<div id="admin-entry" onclick="openAdmin()">⚙ 管理</div>
+
+<!-- Admin Panel -->
+<div id="admin-panel">
+  <div class="admin-box">
+    <span class="admin-close" onclick="closeAdmin()">✕</span>
+    <div class="admin-title">⚙ 后台管理</div>
+    <div id="admin-login-area">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">请输入管理密码</div>
+      <div class="admin-login">
+        <input type="password" id="admin-pass" placeholder="管理密码">
+        <button class="btn-admin-login" onclick="adminLogin()">登录</button>
+      </div>
+      <div id="admin-login-err" style="color:#ff6b6b;font-size:12px;display:none">密码错误</div>
+    </div>
+    <div id="admin-content" style="display:none">
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">总访问</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-orders">0</div><div class="stat-label">待核验</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-activated">0</div><div class="stat-label">已激活</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-revenue">¥0</div><div class="stat-label">收入</div></div>
+      </div>
+
+      <!-- Generate Code -->
+      <div class="admin-add-code">
+        <div style="font-size:13px;color:var(--gold);margin-bottom:4px;">手动生成激活码</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">收到付款后，填写备注关键词，生成激活码发给用户</div>
+        <div class="admin-add-row">
+          <input type="text" id="admin-remark" placeholder="用户备注（如：张三）">
+          <button class="btn-gen-code" onclick="genActivateCode()">生成激活码</button>
+        </div>
+        <div class="new-code-display" id="new-code-display"></div>
+      </div>
+
+      <!-- Orders -->
+      <div style="margin-top:24px;">
+        <div style="font-size:13px;color:var(--gold);margin-bottom:12px;">订单记录</div>
+        <table class="order-table">
+          <thead><tr><th>时间</th><th>备注</th><th>激活码</th><th>状态</th></tr></thead>
+          <tbody id="order-tbody"></tbody>
+        </table>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;" id="no-orders">暂无订单记录</div>
+      </div>
+
+      <!-- Set QR -->
+      <div style="margin-top:24px;">
+        <div style="font-size:13px;color:var(--gold);margin-bottom:8px;">收款方式设置</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">选择付费模式：</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <button class="btn-upload" id="btn-mode-zansang" onclick="setPayMode('zansang')" style="border-color:var(--gold);background:rgba(201,168,76,0.1);">💚 赞赏模式（公众号赞赏）</button>
+          <button class="btn-upload" id="btn-mode-qrcode" onclick="setPayMode('qrcode')">📱 收款码模式（扫码支付）</button>
+        </div>
+        <div id="zansang-setting" style="margin-bottom:14px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">赞赏文章链接（用户点击跳转到带赞赏功能的文章）：</div>
+          <div class="admin-add-row">
+            <input type="text" id="zansang-url-input" placeholder="https://mp.weixin.qq.com/s/...">
+            <button class="btn-gen-code" onclick="saveZansangUrl()">保存</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="zansang-url-status"></div>
+        </div>
+        <div id="qrcode-setting" style="display:none;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">上传你的微信收款码图片（建议200×200px）</div>
+          <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="uploadQR(event)">
+          <button class="btn-upload" onclick="document.getElementById('qr-file-input').click()">📷 上传微信收款码</button>
+          <div style="font-size:12px;color:var(--muted)">当前：<span id="qr-status">未上传（使用默认占位图）</span></div>
+        </div>
+      </div>
+
+      <!-- Change password -->
+      <div style="margin-top:20px;">
+        <div style="font-size:13px;color:var(--gold);margin-bottom:8px;">修改管理密码</div>
+        <div class="admin-add-row">
+          <input type="password" id="new-pass" placeholder="新密码">
+          <button class="btn-gen-code" onclick="changePass()">确认修改</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STARS
+// ============================================================
+(function(){
+  const s = document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const el = document.createElement('div');
+    el.className = 'star';
+    const size = Math.random()*2+0.5;
+    el.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+    s.appendChild(el);
+  }
+})();
+
+// ============================================================
+// STORAGE HELPERS
+// ============================================================
+const LS = {
+  get: k => { try{ return JSON.parse(localStorage.getItem('ziwei_'+k)) }catch(e){ return null } },
+  set: (k,v) => localStorage.setItem('ziwei_'+k, JSON.stringify(v)),
+  inc: k => { const v=(LS.get(k)||0)+1; LS.set(k,v); return v; }
+};
+
+// ============================================================
+// ZIPAI ALGORITHM (紫微斗数排盘引擎)
+// ============================================================
+const DIZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const TIANGAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const PALACES = ['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
+const HOUR_DIZHI = [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11];
+
+// 五行局
+function getWuxingJu(mingGong, yearGan) {
+  const ganToWu = [2,2,3,3,4,4,5,5,1,1]; // 甲乙水/丙丁火/戊己土/庚辛金/壬癸木
+  // 命宫寅午戌 / 申子辰 / 巳酉丑 / 亥卯未 / 寅午戌
+  const zhi = mingGong;
+  const gan = yearGan;
+  // Simple lookup: 寅子辰→水2局, 卯亥未→木3局, 午戌寅→火6局, 酉巳丑→金4局, 申辰子→土5局
+  const juMap = [
+    [2,2,2], // 子丑寅 group
+    [3,3,3],
+    [4,4,4],
+    [5,5,5],
+    [6,6,6],
+  ];
+  // 实用简化版：按命宫地支和年干确定五行局
+  const mingZhi = zhi % 12;
+  const tables = {
+    0:2, 2:2, 4:2, 6:2, 8:2, 10:2, // 偶数位水二局
+    1:3, 3:4, 5:6, 7:5, 9:3, 11:6  // 奇数位分布
+  };
+  // 更准确的五行局（基于年干+命宫地支）
+  const juTable = [
+    [2,6,4,2,6,4,2,6,4,2,6,4], // 甲
+    [2,6,4,2,6,4,2,6,4,2,6,4], // 乙
+    [4,2,6,4,2,6,4,2,6,4,2,6], // 丙
+    [4,2,6,4,2,6,4,2,6,4,2,6], // 丁
+    [6,4,2,6,4,2,6,4,2,6,4,2], // 戊
+    [6,4,2,6,4,2,6,4,2,6,4,2], // 己
+    [3,5,3,5,3,5,3,5,3,5,3,5], // 庚
+    [3,5,3,5,3,5,3,5,3,5,3,5], // 辛
+    [5,3,5,3,5,3,5,3,5,3,5,3], // 壬
+    [5,3,5,3,5,3,5,3,5,3,5,3], // 癸
+  ];
+  return juTable[gan][mingZhi];
+}
+
+// 命宫计算（月支起子，时支逆数）
+function getMingGong(month, hourIdx) {
+  // 寅月 = 2, 月支 = month+1 (1月=寅=2)
+  const monthZhi = (month + 1) % 12; // 1月→寅(2)
+  // 逆推命宫：命宫地支 = (寅 + 月 - 时支) mod 12
+  const mingIdx = ((2 + (month-1)) - hourIdx + 12*10) % 12;
+  return mingIdx;
+}
+
+// 安主星
+const MAIN_STARS = {
+  '紫微': null, '天机': null, '太阳': null, '武曲': null, '天同': null,
+  '廉贞': null, '天府': null, '太阴': null, '贪狼': null, '巨门': null,
+  '天相': null, '天梁': null, '七杀': null, '破军': null
+};
+
+// 紫微星起宫规则（按五行局和生日）
+function getZiWeiGong(ju, day) {
+  // 按五行局和日数找紫微所在地支
+  const maps = {
+    2: [0,0,2,2,4,4,6,6,8,8,10,10,0,0,2,2,4,4,6,6,8,8,10,10,0,0,2,2,4,4,4],
+    3: [0,0,0,3,3,3,6,6,6,9,9,9,0,0,0,3,3,3,6,6,6,9,9,9,0,0,0,3,3,3,3],
+    4: [0,0,0,0,4,4,4,4,8,8,8,8,0,0,0,0,4,4,4,4,8,8,8,8,0,0,0,0,4,4,4],
+    5: [0,0,0,0,0,5,5,5,5,5,10,10,10,10,10,3,3,3,3,3,8,8,8,8,8,1,1,1,1,1,1],
+    6: [0,0,0,0,0,0,6,6,6,6,6,6,0,0,0,0,0,0,6,6,6,6,6,6,0,0,0,0,0,0,0],
+  };
+  const d = Math.min(day-1, 29);
+  return (maps[ju] || maps[2])[d] || 0;
+}
+
+// 十四主星按宫位安置（天府从紫微逆推）
+function placePrimaryStars(ziWeiGong) {
+  const placements = {};
+  // 紫微系 顺布
+  const ziWeiSeq = ['紫微','天机',null,'太阳','武曲','天同',null,null,'廉贞'];
+  ziWeiSeq.forEach((s,i) => {
+    if(s) placements[s] = (ziWeiGong + i) % 12;
+  });
+  // 天府系 逆布（天府在紫微对宫逆推）
+  const tianFuGong = (ziWeiGong + 6) % 12;
+  const tianFuSeq = ['天府','太阴','贪狼','巨门','天相','天梁','七杀',null,null,'破军'];
+  tianFuSeq.forEach((s,i) => {
+    if(s) placements[s] = (tianFuGong + 12 - i) % 12;
+  });
+  return placements;
+}
+
+// 辅星
+function placeAuxStars(yearGan, yearZhi, monthZhi, day, hourZhi) {
+  const aux = {};
+  // 文昌（时支起）：戌时子逆
+  aux['文昌'] = (10 - hourZhi + 12) % 12;
+  // 文曲（时支起）：辰时子顺
+  aux['文曲'] = (4 + hourZhi) % 12;
+  // 禄存（年干起寅）
+  const luMap = [2,3,5,6,5,6,8,9,11,0];
+  aux['禄存'] = luMap[yearGan];
+  // 天马（年支）
+  const maMap = [2,11,8,5,2,11,8,5,2,11,8,5];
+  aux['天马'] = maMap[yearZhi];
+  // 左辅右弼（月支）
+  aux['左辅'] = (monthZhi + 3) % 12;
+  aux['右弼'] = (10 - monthZhi + 12) % 12;
+  return aux;
+}
+
+// 四化（年干决定）
+const SIHUA_TABLE = {
+  0: {lu:'廉贞',quan:'破军',ke:'武曲',ji:'太阳'},   // 甲
+  1: {lu:'天机',quan:'天梁',ke:'紫微',ji:'太阴'},   // 乙
+  2: {lu:'天同',quan:'天机',ke:'文昌',ji:'廉贞'},   // 丙
+  3: {lu:'太阴',quan:'天同',ke:'天机',ji:'巨门'},   // 丁
+  4: {lu:'贪狼',quan:'太阴',ke:'右弼',ji:'天机'},   // 戊
+  5: {lu:'武曲',quan:'贪狼',ke:'天梁',ji:'文曲'},   // 己
+  6: {lu:'太阳',quan:'武曲',ke:'天同',ji:'文昌'},   // 庚
+  7: {lu:'巨门',quan:'太阳',ke:'太阴',ji:'文曲'},   // 辛
+  8: {lu:'天梁',quan:'紫微',ke:'左辅',ji:'武曲'},   // 壬
+  9: {lu:'破军',quan:'巨门',ke:'太阴',ji:'贪狼'},   // 癸
+};
+
+// 农历简算（Zeller改良）
+function solarToLunar(year, month, day) {
+  // 简化农历年干支计算
+  const gzYear = (year - 4) % 60;
+  const gan = gzYear % 10;
+  const zhi = gzYear % 12;
+  // 粗略月建（农历月 ≈ 阳历月 - 1，需精确应查表）
+  let lunarMonth = month - 1;
+  if(lunarMonth <= 0) lunarMonth = 12;
+  // 月地支（正月=寅=2）
+  const monthZhi = (lunarMonth + 1) % 12;
+  return { gan, zhi, monthZhi, lunarMonth };
+}
+
+// 完整命盘计算
+function calcPalaces(year, month, day, hourIdx, gender) {
+  const lunar = solarToLunar(year, month, day);
+  const hourZhi = hourIdx;
+  const mingGong = getMingGong(month, hourZhi);
+  const ju = getWuxingJu(mingGong, lunar.gan);
+  const ziWeiGong = getZiWeiGong(ju, day);
+  const primaryStars = placePrimaryStars(ziWeiGong);
+  const auxStars = placeAuxStars(lunar.gan, lunar.zhi, lunar.monthZhi, day, hourZhi);
+  const sihua = SIHUA_TABLE[lunar.gan] || SIHUA_TABLE[0];
+
+  // 十二宫星盘
+  const palaceData = Array.from({length:12}, (_,i) => ({
+    name: PALACES[(i - mingGong + 12) % 12],
+    idx: i,
+    main: [],
+    aux: [],
+    sihua: {}
+  }));
+
+  // 安主星
+  Object.entries(primaryStars).forEach(([star, gong]) => {
+    palaceData[gong].main.push(star);
+  });
+  // 安辅星
+  Object.entries(auxStars).forEach(([star, gong]) => {
+    palaceData[gong].aux.push(star);
+  });
+  // 标注四化
+  Object.entries(sihua).forEach(([type, star]) => {
+    Object.entries(primaryStars).forEach(([s, g]) => {
+      if(s === star) palaceData[g].sihua[star] = type;
+    });
+    Object.entries(auxStars).forEach(([s, g]) => {
+      if(s === star) palaceData[g].sihua[star] = type;
+    });
+  });
+
+  // 命宫主星
+  const mingMainStar = palaceData[mingGong].main[0] || '未知';
+  const juNames = {2:'水二局',3:'木三局',4:'金四局',5:'土五局',6:'火六局'};
+
+  return {
+    palaceData, mingGong, ju, juName: juNames[ju]||'火六局',
+    ziWeiGong, yearGan: lunar.gan, yearZhi: lunar.zhi,
+    monthZhi: lunar.monthZhi, sihua,
+    primaryStars, auxStars, mingMainStar,
+    ganName: TIANGAN[lunar.gan], zhiName: DIZHI[lunar.zhi]
+  };
+}
+
+// ============================================================
+// DIMENSION ANALYSIS ENGINE
+// ============================================================
+const STAR_TRAITS = {
+  '紫微': {score:90, traits:['贵气','权威','领导力']},
+  '天机': {score:82, traits:['智谋','变通','策划']},
+  '太阳': {score:85, traits:['光明','人脉','流量']},
+  '武曲': {score:88, traits:['财运','实干','决断']},
+  '天同': {score:78, traits:['福德','圆融','人缘']},
+  '廉贞': {score:75, traits:['才华','是非','变化']},
+  '天府': {score:87, traits:['积累','稳健','财库']},
+  '太阴': {score:84, traits:['柔情','偏财','阴柔']},
+  '贪狼': {score:80, traits:['多艺','欲望','桃花']},
+  '巨门': {score:72, traits:['口才','是非','口舌']},
+  '天相': {score:83, traits:['印绶','体系','执行']},
+  '天梁': {score:85, traits:['寿星','化解','贵人']},
+  '七杀': {score:76, traits:['冲劲','独立','权威']},
+  '破军': {score:70, traits:['变革','开创','破旧']},
+};
+
+const DIM_PALACE = {
+  wealth: 4,   // 财帛宫
+  career: 8,   // 官禄宫
+  love:   2,   // 夫妻宫
+  health: 5,   // 疾厄宫
+  child:  3,   // 子女宫
+  travel: 6,   // 迁移宫
+};
+
+const DIM_META = {
+  overall: { icon:'🌌', name:'整体运势', color:'#c9a84c' },
+  wealth:  { icon:'💰', name:'财运',     color:'#f0d080' },
+  career:  { icon:'🚀', name:'事业',     color:'#80d0ff' },
+  love:    { icon:'💕', name:'情感',     color:'#ffaabb' },
+  health:  { icon:'🌿', name:'健康',     color:'#80e0a0' },
+  child:   { icon:'👶', name:'子女',     color:'#ffcc80' },
+  travel:  { icon:'🌍', name:'迁移出行', color:'#c0a0ff' },
+};
+
+function analyzeDim(dim, palaceData, mingGong, sihua, yearGan) {
+  if(dim === 'overall') return analyzeOverall(palaceData, mingGong, sihua, yearGan);
+  const pIdx = (mingGong + DIM_PALACE[dim]) % 12;
+  const palace = palaceData[pIdx];
+  const mainStar = palace.main[0];
+  const trait = mainStar ? STAR_TRAITS[mainStar] : {score:70, traits:['平稳']};
+  const sihuaInPalace = palace.sihua;
+  let score = trait ? trait.score : 70;
+  let tags = [], analysis = '', advice = '';
+
+  // 四化加减分
+  Object.entries(sihuaInPalace).forEach(([star, type]) => {
+    if(type === 'lu') { score = Math.min(score+10, 99); tags.push({t:'化禄', cls:'tag-good'}); }
+    if(type === 'quan') { score = Math.min(score+6, 99); tags.push({t:'化权', cls:'tag-good'}); }
+    if(type === 'ke') { score = Math.min(score+4, 99); tags.push({t:'化科', cls:'tag-good'}); }
+    if(type === 'ji') { score = Math.max(score-15, 40); tags.push({t:'化忌', cls:'tag-bad'}); }
+  });
+
+  const dimTexts = {
+    wealth: {
+      '紫微': ['有贵人相助带来横财，正财稳固','可考虑投资高端领域，不宜赌博投机'],
+      '天府': ['财库星坐财帛，一生衣食无忧','善于积累，建议储蓄+稳健投资组合'],
+      '武曲': ['财星本命，实干型财运极旺','可涉足实体生意、硬资产投资'],
+      '太阴': ['偏财缘佳，流量变现能力强','适合自媒体、流量变现、女性用户市场'],
+      '太阳': ['流量财，人脉带财','适合公众号、自媒体、人脉生意'],
+      'default': ['财运中等偏上，稳扎稳打为主','量入为出，避免大额投机']
+    },
+    career: {
+      '天府': ['官禄宫天府，事业积累型','适合稳健经营，长期布局优于短期爆发'],
+      '紫微': ['紫微坐官，天生领导者命格','适合创业或担任领导职位'],
+      '天机': ['智谋型事业，擅长策划与创新','AI、科技、咨询类赛道最适合'],
+      '七杀': ['事业冲劲强，开创力极佳','适合创业，忌守旧打工'],
+      '破军': ['破旧立新，转型变革中爆发','适合颠覆性创业，忌守成'],
+      'default': ['事业稳步推进，需主动出击','找准赛道，深耕细作']
+    },
+    love: {
+      '贪狼': ['桃花旺，感情丰富','需注意情感专一，避免多角关系'],
+      '天同': ['情感圆融，伴侣关系和谐','重情义，适合稳定长期关系'],
+      '太阴': ['感情细腻，浪漫主义','重精神交流，找重情感的伴侣'],
+      '廉贞': ['感情多变，情感波折多','需主动经营，避免沟通问题积累'],
+      'default': ['感情平稳，相互扶持','真诚沟通是最好的经营方式']
+    },
+    health: {
+      '天梁': ['健康星，寿元佳','日常注意规律作息即可'],
+      '天同': ['福德宫吉，身体自我修复力强','注意情绪管理，心情好百病消'],
+      '巨门': ['口腔、消化系统注意','定期体检，少熬夜'],
+      'default': ['健康基础良好','注意运动与作息规律']
+    },
+    child: {
+      '天机': ['子女聪慧好学，有独立思考力','给予充足空间，忌过度管控'],
+      '紫微': ['子女有贵气，出类拔萃','注重子女教育投入，回报高'],
+      '天梁': ['子女孝顺，有福报','亲子关系融洽，晚年有依靠'],
+      '巨门': ['子女口才好，有想法','多沟通，减少代际摩擦'],
+      'default': ['子女缘分一般','注意亲子陪伴质量']
+    },
+    travel: {
+      '天马': ['迁移有利，出行助运','适合出差、移居，异乡发展好'],
+      '太阳': ['利南方、东方出行','人脉广，出行常遇贵人'],
+      '天机': ['出行变动多，机遇多','随机应变，出行中有好机遇'],
+      'default': ['迁移运平稳','出行前做好准备，方向大于努力']
+    }
+  };
+
+  const dimT = dimTexts[dim] || dimTexts['career'];
+  const starText = dimT[mainStar] || dimT['default'];
+  analysis = starText[0] + (mainStar ? `（${mainStar}星坐${PALACES[(mingGong + DIM_PALACE[dim])%12]}）` : '');
+  advice = starText[1];
+  if(!tags.length) tags.push({t: score>=80?'吉':'平', cls: score>=80?'tag-good':'tag-warn'});
+  if(mainStar) tags.push({t: mainStar, cls:'tag-good'});
+
+  return { score, tags, analysis, advice };
+}
+
+function analyzeOverall(palaceData, mingGong, sihua, yearGan) {
+  const mingPalace = palaceData[mingGong];
+  const mainStar = mingPalace.main[0] || '天相';
+  const trait = STAR_TRAITS[mainStar] || {score:78, traits:['平稳']};
+  let score = trait.score;
+  let tags = trait.traits.map(t => ({t, cls:'tag-good'}));
+
+  const overallTexts = {
+    '紫微': '紫微星坐命，天生领袖气质，一生有贵人扶持，逢凶化吉。命格高贵，适合引领他人，创业首选。',
+    '天机': '天机坐命，智慧超群，思维灵活，擅长谋划。AI科技、策划咨询类事业天赋极强。',
+    '太阳': '太阳坐命，光芒四射，人脉极广，适合公众事业、自媒体、IP运营。人气和流量是你的核心资产。',
+    '武曲': '武曲坐命，财星入命，实干精神强，适合商业经营，财运通达，一生衣食无忧。',
+    '天同': '天同坐命，福星高照，性格温和圆融，贵人运佳，一生少折腾，顺水推舟多福报。',
+    '廉贞': '廉贞坐命，才华横溢，感情丰富，人生起伏较多，但才艺出众，适合创意和表达类事业。',
+    '天府': '天府坐命，命格稳重，积累型富贵，一生重积蓄，财库丰厚，适合稳健经营。',
+    '太阴': '太阴坐命，气质典雅，感情细腻，偏财缘好，流量变现能力极强，适合内容创业。',
+    '贪狼': '贪狼坐命，多才多艺，桃花旺，欲望驱动力强，需聚焦方向，不宜分散精力。',
+    '巨门': '巨门坐命，口才绝佳，适合传媒、演讲、咨询。需注意是非口舌，做好信息管控。',
+    '天相': '天相坐命，印绶星，体系化能力强，执行力出众，适合搭建系统和流程，合伙补短板更佳。',
+    '天梁': '天梁坐命，寿星高照，一生贵人多，化灾解难能力强，适合顾问、教育、公益类事业。',
+    '七杀': '七杀坐命，冲劲十足，开创力极强，天生创业者，需搭配稳健合伙人，互补制衡。',
+    '破军': '破军坐命，变革先锋，敢于打破陈规，适合颠覆性创新，人生多转折但每次转折后都有跃升。',
+  };
+
+  const analysis = overallTexts[mainStar] || '命格平稳，积累型发展，稳扎稳打，步步为营。';
+
+  Object.entries(mingPalace.sihua).forEach(([star, type]) => {
+    if(type === 'lu') { score = Math.min(score+8, 99); tags.push({t:'命宫化禄大吉', cls:'tag-good'}); }
+    if(type === 'ji') { score = Math.max(score-10, 50); tags.push({t:'命宫化忌需注意', cls:'tag-bad'}); }
+  });
+
+  return {
+    score, tags, analysis,
+    advice: `命宫主星${mainStar}，建议扬长避短，${trait.traits.join('、')}是你的核心优势，善加利用。`
+  };
+}
+
+// ============================================================
+// LIUYEAR 流年
+// ============================================================
+function getLiuYear(year, mingGong) {
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, currentYear+1, currentYear+2];
+  const GZ = ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉','甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未','甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳','甲午','乙未','丙申','丁酉','戊戌','己亥','庚子','辛丑','壬寅','癸卯','甲辰','乙巳','丙午','丁未','戊申','己酉','庚戌','辛亥','壬子','癸丑','甲寅','乙卯','丙辰','丁巳','戊午','己未','庚申','辛酉','壬戌','癸亥'];
+  return years.map(y => {
+    const gzIdx = (y - 1924) % 60;
+    const gz = GZ[gzIdx] || GZ[gzIdx%60];
+    const gan = gzIdx % 10;
+    const sihua = SIHUA_TABLE[gan] || SIHUA_TABLE[0];
+    const stars = `${sihua.lu}化禄 · ${sihua.quan}化权`;
+    const isCurrent = y === currentYear;
+    const scores = [88, 92, 75, 82, 78, 90, 85];
+    const score = scores[(y+mingGong)%7];
+    return { year: y, gz: gz||'甲子', stars, isCurrent, score };
+  });
+}
+
+// ============================================================
+// QR CODE (Simple matrix generator)
+// ============================================================
+function drawDefaultQR(canvas) {
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,size,size);
+
+  // Draw placeholder QR pattern
+  ctx.fillStyle = '#1a1a35';
+  const cell = Math.floor(size/21);
+
+  // Corner squares
+  function drawCorner(x, y) {
+    ctx.fillRect(x*cell, y*cell, 7*cell, 7*cell);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect((x+1)*cell, (y+1)*cell, 5*cell, 5*cell);
+    ctx.fillStyle = '#1a1a35';
+    ctx.fillRect((x+2)*cell, (y+2)*cell, 3*cell, 3*cell);
+  }
+  drawCorner(0,0); drawCorner(14,0); drawCorner(0,14);
+
+  // Random fill for pattern
+  ctx.fillStyle = '#1a1a35';
+  for(let r=0;r<21;r++) for(let c=0;c<21;c++){
+    if((r<9&&c<9)||(r<9&&c>11)||(r>11&&c<9)) continue;
+    if(Math.random()>0.55) ctx.fillRect(c*cell,r*cell,cell-1,cell-1);
+  }
+
+  // Center text
+  ctx.fillStyle = 'rgba(26,26,53,0.7)';
+  ctx.fillRect(6*cell,8*cell,9*cell,5*cell);
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = `bold ${Math.floor(cell*1.2)}px PingFang SC, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('上传收款码', size/2, size/2 - cell*0.3);
+  ctx.font = `${Math.floor(cell*0.9)}px PingFang SC, sans-serif`;
+  ctx.fillText('¥ 0.99', size/2, size/2 + cell*1.2);
+}
+
+// ============================================================
+// PAYWALL
+// ============================================================
+let currentUserData = null;
+let currentRemarkCode = '';
+
+function generateRemarkCode(name) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return name.substring(0,1).toUpperCase() + code;
+}
+
+function openPaywall(userData) {
+  currentUserData = userData;
+  currentRemarkCode = generateRemarkCode(userData.name || 'U');
+  document.getElementById('remark-code').textContent = currentRemarkCode;
+  if(document.getElementById('remark-code2')) {
+    document.getElementById('remark-code2').textContent = currentRemarkCode;
+  }
+
+  // Check payment mode
+  const payMode = LS.get('pay_mode') || 'zansang'; // 'zansang' or 'qrcode'
+  if(payMode === 'zansang') {
+    document.getElementById('zansang-mode').style.display = 'block';
+    document.getElementById('qrcode-mode').style.display = 'none';
+    // Set zansang link (admin configurable)
+    const zansangUrl = LS.get('zansang_url') || 'https://mp.weixin.qq.com/s/PLEASE_SET_ARTICLE_LINK';
+    document.getElementById('zansang-link').href = zansangUrl;
+  } else {
+    document.getElementById('zansang-mode').style.display = 'none';
+    document.getElementById('qrcode-mode').style.display = 'block';
+    // Draw QR code
+    const canvas = document.getElementById('qr-canvas2');
+    const savedQR = LS.get('qr_image');
+    if(savedQR) {
+      const img = new Image();
+      img.onload = () => {
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = savedQR;
+    } else {
+      drawDefaultQR(canvas);
+    }
+  }
+
+  document.getElementById('paywall').classList.add('show');
+  document.getElementById('verify-error').style.display = 'none';
+  document.getElementById('verify-input').value = '';
+
+  // Save pending order
+  const orders = LS.get('orders') || [];
+  orders.push({
+    time: new Date().toLocaleString('zh-CN'),
+    remark: currentRemarkCode,
+    name: userData.name,
+    code: null,
+    activated: false
+  });
+  LS.set('orders', orders);
+  LS.inc('total_visits');
+}
+
+function closePaywall() {
+  document.getElementById('paywall').classList.remove('show');
+}
+
+function copyRemark() {
+  const code = document.getElementById('remark-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    document.getElementById('remark-code').textContent = '已复制!';
+    setTimeout(() => document.getElementById('remark-code').textContent = code, 1500);
+  });
+}
+function copyRemark2() {
+  const el = document.getElementById('remark-code2');
+  if(!el) return;
+  const code = el.textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    el.textContent = '已复制!';
+    setTimeout(() => el.textContent = code, 1500);
+  });
+}
+
+function verifyCode() {
+  const input = document.getElementById('verify-input').value.trim().toUpperCase();
+  if(!input) return;
+
+  const validCodes = LS.get('valid_codes') || [];
+  const idx = validCodes.indexOf(input);
+  if(idx >= 0) {
+    // Mark used
+    validCodes.splice(idx, 1);
+    LS.set('valid_codes', validCodes);
+
+    // Update order
+    const orders = LS.get('orders') || [];
+    const order = orders.find(o => !o.activated);
+    if(order) { order.activated = true; order.code = input; }
+    LS.set('orders', orders);
+
+    closePaywall();
+    showResult(currentUserData);
+  } else {
+    document.getElementById('verify-error').style.display = 'block';
+    document.getElementById('verify-input').style.borderColor = '#ff6b6b';
+    setTimeout(() => document.getElementById('verify-input').style.borderColor = '', 1500);
+  }
+}
+
+// ============================================================
+// RENDER RESULT
+// ============================================================
+function showResult(data) {
+  const loading = document.getElementById('loading');
+  loading.classList.add('show');
+
+  setTimeout(() => {
+    loading.classList.remove('show');
+    document.getElementById('input-card').parentElement.style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+    renderResult(data);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }, 2000);
+}
+
+function renderResult(data) {
+  const { year, month, day, hourIdx, gender, name, birthplace, dims } = data;
+  const board = calcPalaces(year, month, day, hourIdx, gender);
+
+  // Palace Grid
+  renderPalaceGrid(board);
+
+  // Score
+  const overallResult = analyzeDim('overall', board.palaceData, board.mingGong, board.sihua, board.yearGan);
+  const scoreEl = document.getElementById('score-dash');
+  const scoreNum = document.getElementById('score-num');
+  const scoreLabel = document.getElementById('score-label');
+  const score = overallResult.score;
+  setTimeout(() => {
+    const offset = 314 * (1 - score/100);
+    scoreEl.style.strokeDashoffset = offset;
+    let n = 0;
+    const t = setInterval(() => {
+      scoreNum.textContent = Math.min(n++, score);
+      if(n > score) clearInterval(t);
+    }, 20);
+  }, 300);
+  const labels = ['平稳', '平稳', '中上', '中上', '良好', '良好', '优秀', '优秀', '卓越', '顶级命格'];
+  scoreLabel.textContent = labels[Math.floor(score/10)] + ' — ' + board.mingMainStar + '星坐命 · ' + board.juName;
+
+  // Dimension cards
+  const container = document.getElementById('dim-cards-container');
+  container.innerHTML = '';
+  const activeDims = dims.length ? dims : ['overall'];
+  activeDims.forEach(dim => {
+    const result = analyzeDim(dim, board.palaceData, board.mingGong, board.sihua, board.yearGan);
+    const meta = DIM_META[dim];
+    const card = document.createElement('div');
+    card.className = 'dim-card';
+    card.innerHTML = `
+      <div class="dim-card-header">
+        <div class="dim-card-icon">${meta.icon}</div>
+        <div class="dim-card-title">${meta.name}</div>
+        <div style="margin-left:auto;font-size:20px;color:${meta.color};font-weight:300">${result.score}</div>
+      </div>
+      <div class="dim-score-bar">
+        <div class="dim-score-fill" id="bar-${dim}" style="width:0%;background:${meta.color};"></div>
+      </div>
+      <div style="margin-bottom:10px">${result.tags.map(t=>`<span class="dim-tag ${t.cls}">${t.t}</span>`).join('')}</div>
+      <div class="dim-analysis">${result.analysis}</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);padding-top:8px;border-top:1px solid rgba(255,255,255,0.05)">
+        💡 ${result.advice}
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => {
+      document.getElementById('bar-'+dim).style.width = result.score + '%';
+    }, 500);
+  });
+
+  // Liuyear
+  const liuYears = getLiuYear(year, board.mingGong);
+  const liuList = document.getElementById('liuyear-list');
+  liuList.innerHTML = liuYears.map(ly => `
+    <div class="liuyear-item ${ly.isCurrent?'current':''}">
+      <div class="liuyear-year">${ly.year}</div>
+      <div class="liuyear-gz">${ly.gz}</div>
+      <div class="liuyear-stars">${ly.stars}${ly.isCurrent?' 【当前年】':''}</div>
+      <div class="liuyear-rating">${'⭐'.repeat(Math.round(ly.score/20))}</div>
+    </div>
+  `).join('');
+
+  // Advice
+  const adviceData = generateAdvice(board);
+  const adviceList = document.getElementById('advice-list');
+  adviceList.innerHTML = adviceData.map(a => `<li><span class="icon">${a.icon}</span><span>${a.text}</span></li>`).join('');
+}
+
+function renderPalaceGrid(board) {
+  const grid = document.getElementById('palace-grid');
+  grid.innerHTML = '';
+  // 按照传统命盘顺序：逆时针从右下角开始
+  // 标准紫微盘布局：寅在左下，顺时针
+  const layoutOrder = [3,4,5,6,7,8,9,10,11,0,1,2]; // 卯-寅-丑...
+  const positions = [
+    // row1: 宫2-宫3-宫4-宫5 (下排从左到右)
+    [3,0],[4,0],[5,0],[6,0],
+    // row2 左右竖排
+    [2,1],[7,1],
+    [1,2],[8,2],
+    // row3
+    [0,3],[11,3],[10,3],[9,3],
+  ];
+  // 12宫标准排列（紫微命盘逆时针，底部起寅）
+  const palaceLayout = [
+    {pos:[0,3]}, {pos:[1,3]}, {pos:[2,3]}, {pos:[3,3]},
+    {pos:[3,2]}, {pos:[3,1]}, {pos:[3,0]}, {pos:[2,0]},
+    {pos:[1,0]}, {pos:[0,0]}, {pos:[0,1]}, {pos:[0,2]},
+  ];
+
+  palaceLayout.forEach((pl, i) => {
+    const palace = board.palaceData[i];
+    const isMing = i === board.mingGong;
+    const div = document.createElement('div');
+    div.className = `palace${isMing?' ming':''}`;
+    div.style.gridColumn = pl.pos[0]+1;
+    div.style.gridRow = pl.pos[1]+1;
+    const stars = [
+      ...palace.main.map(s => {
+        const sihuaMark = palace.sihua[s] ? {lu:'禄',quan:'权',ke:'科',ji:'忌'}[palace.sihua[s]] : '';
+        return `<span class="star-main">${s}${sihuaMark?`<sup>${sihuaMark}</sup>`:''}</span>`;
+      }),
+      ...palace.aux.map(s => `<span class="star-luck">${s}</span>`)
+    ].join(' ');
+    div.innerHTML = `
+      <div class="palace-name">${palace.name}</div>
+      <div class="palace-stars">${stars || '<span style="color:rgba(255,255,255,0.2)">空</span>'}</div>
+    `;
+    grid.appendChild(div);
+  });
+
+  // Center palace
+  const center = document.createElement('div');
+  center.className = 'palace center';
+  center.style.cssText = 'grid-column:2/4;grid-row:2/4;';
+  const age = new Date().getFullYear() - (currentUserData?.year || 1994);
+  center.innerHTML = `
+    <div class="center-name">${currentUserData?.name || '命主'}</div>
+    <div class="center-sub">
+      ${board.ganName}${board.zhiName}年生<br>
+      命宫 ${DIZHI[board.mingGong]}宫<br>
+      ${board.juName}<br>
+      命主星 ${board.mingMainStar}
+    </div>
+  `;
+  grid.appendChild(center);
+}
+
+function generateAdvice(board) {
+  const mainStar = board.mingMainStar;
+  const sihua = board.sihua;
+  const advices = [
+    { icon:'🎯', text: `主星${mainStar}入命，${STAR_TRAITS[mainStar]?.traits.join('、') || '平稳'}是你的核心竞争力，建议在AI/科技赛道全力发挥。` },
+    { icon:'💰', text: `财帛宫${board.palaceData[(board.mingGong+4)%12].main[0]||'空'}星，${sihua.lu}化禄在${board.palaceData.find(p=>p.main.includes(sihua.lu))?.name||'财帛'}，适合流量变现和人脉型生意。` },
+    { icon:'🤝', text: `兄弟宫（代表合伙）星曜${board.palaceData[(board.mingGong+1)%12].main[0]||'空'}，合伙需书面合同，提前约定退出机制。` },
+    { icon:'⚡', text: `当前丙寅大运（天机太阴），AI内容创业与大运星性完美契合，2026年全力出击最佳。` },
+    { icon:'🛡️', text: `${sihua.ji}化忌需留意，相关宫位事务提前规避风险，不赌博、不激进投机。` },
+    { icon:'📅', text: `每年农历生日前后一个月为个人"变化节点"，重大决策建议在此期间前后审慎考量。` },
+  ];
+  return advices;
+}
+
+// ============================================================
+// SHARE
+// ============================================================
+function shareResult() {
+  const text = `✦ 我的紫微斗数命盘已生成！命主星 ${currentUserData?.name}，快来测测你的命运推演 → [OpenClaw]`;
+  if(navigator.share) {
+    navigator.share({ title: '紫微命盘推演', text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => alert('分享文本已复制，可粘贴分享！'));
+  }
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function openAdmin() { document.getElementById('admin-panel').classList.add('show'); }
+function closeAdmin() { document.getElementById('admin-panel').classList.remove('show'); }
+
+function adminLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  const savedPass = LS.get('admin_pass') || 'openclaw2026';
+  if(pass === savedPass) {
+    document.getElementById('admin-login-area').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+    loadAdminData();
+  } else {
+    document.getElementById('admin-login-err').style.display = 'block';
+  }
+}
+
+function loadAdminData() {
+  const orders = LS.get('orders') || [];
+  const total = LS.get('total_visits') || 0;
+  const pending = orders.filter(o => !o.activated).length;
+  const activated = orders.filter(o => o.activated).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-orders').textContent = pending;
+  document.getElementById('stat-activated').textContent = activated;
+  document.getElementById('stat-revenue').textContent = '¥' + (activated * 0.99).toFixed(2);
+
+  const tbody = document.getElementById('order-tbody');
+  if(!orders.length) {
+    document.getElementById('no-orders').style.display = 'block';
+    tbody.innerHTML = '';
+    return;
+  }
+  document.getElementById('no-orders').style.display = 'none';
+  tbody.innerHTML = orders.slice().reverse().map((o,i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:11px">${o.time}</td>
+      <td>${o.name||'-'} / ${o.remark}</td>
+      <td style="font-family:monospace;color:var(--gold-light)">${o.code || '待核验'}</td>
+      <td>${o.activated ? '<span style="color:#80e0a0">✓ 已激活</span>' : '<span style="color:#ffc850">待核验</span>'}</td>
+    </tr>
+  `).join('');
+
+  // QR status
+  document.getElementById('qr-status').textContent = LS.get('qr_image') ? '已上传自定义收款码' : '未上传（显示占位图）';
+
+  // Pay mode
+  const payMode = LS.get('pay_mode') || 'zansang';
+  setPayMode(payMode);
+
+  // Zansang URL
+  const zansangUrl = LS.get('zansang_url') || '';
+  if(document.getElementById('zansang-url-input')) {
+    document.getElementById('zansang-url-input').value = zansangUrl;
+    if(zansangUrl) {
+      document.getElementById('zansang-url-status').textContent = '✓ 当前：' + zansangUrl;
+    }
+  }
+}
+
+function genActivateCode() {
+  const remark = document.getElementById('admin-remark').value.trim();
+  if(!remark) { alert('请输入用户备注'); return; }
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+
+  const validCodes = LS.get('valid_codes') || [];
+  validCodes.push(code);
+  LS.set('valid_codes', validCodes);
+
+  const display = document.getElementById('new-code-display');
+  display.style.display = 'block';
+  display.textContent = code;
+  display.onclick = () => { navigator.clipboard.writeText(code); display.textContent = '已复制: ' + code; };
+
+  // Update order
+  const orders = LS.get('orders') || [];
+  const order = orders.find(o => !o.activated && (o.remark?.includes(remark) || o.name?.includes(remark)));
+  if(order) { order.code = code; }
+  else { orders.push({ time: new Date().toLocaleString('zh-CN'), remark, name: remark, code, activated: false }); }
+  LS.set('orders', orders);
+  loadAdminData();
+}
+
+function uploadQR(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    LS.set('qr_image', e.target.result);
+    loadAdminData();
+    alert('收款码上传成功！');
+  };
+  reader.readAsDataURL(file);
+}
+
+function changePass() {
+  const np = document.getElementById('new-pass').value.trim();
+  if(!np) return;
+  LS.set('admin_pass', np);
+  alert('密码已修改');
+}
+
+function setPayMode(mode) {
+  LS.set('pay_mode', mode);
+  const btnZ = document.getElementById('btn-mode-zansang');
+  const btnQ = document.getElementById('btn-mode-qrcode');
+  const setZ = document.getElementById('zansang-setting');
+  const setQR = document.getElementById('qrcode-setting');
+  if(mode === 'zansang') {
+    btnZ.style.borderColor = 'var(--gold)';
+    btnZ.style.background = 'rgba(201,168,76,0.1)';
+    btnQ.style.borderColor = '';
+    btnQ.style.background = '';
+    setZ.style.display = 'block';
+    setQR.style.display = 'none';
+  } else {
+    btnQ.style.borderColor = 'var(--gold)';
+    btnQ.style.background = 'rgba(201,168,76,0.1)';
+    btnZ.style.borderColor = '';
+    btnZ.style.background = '';
+    setZ.style.display = 'none';
+    setQR.style.display = 'block';
+  }
+}
+
+function saveZansangUrl() {
+  const url = document.getElementById('zansang-url-input').value.trim();
+  if(!url) return;
+  LS.set('zansang_url', url);
+  document.getElementById('zansang-url-status').textContent = '✓ 已保存：' + url;
+}
+
+// ============================================================
+// FORM SUBMIT
+// ============================================================
+document.querySelectorAll('.dim-btn').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('active'));
+});
+
+document.getElementById('btn-calc').addEventListener('click', () => {
+  const name = document.getElementById('name').value.trim();
+  const birthplace = document.getElementById('birthplace').value.trim();
+  const year = parseInt(document.getElementById('year').value);
+  const month = parseInt(document.getElementById('month').value);
+  const day = parseInt(document.getElementById('day').value);
+  const hourIdx = parseInt(document.getElementById('hour').value);
+  const gender = document.getElementById('gender').value;
+
+  if(!name || !year || !month || !day || isNaN(hourIdx)) {
+    alert('请填写完整的出生信息');
+    return;
+  }
+
+  const dims = Array.from(document.querySelectorAll('.dim-btn.active')).map(b => b.dataset.dim);
+
+  const userData = { name, birthplace, year, month, day, hourIdx, gender, dims };
+  openPaywall(userData);
+});
+
+// ============================================================
+// INIT
+// ============================================================
+LS.inc('total_visits');
+</script>
+</body>
+</html>
